@@ -12,6 +12,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
   void _handleLogin() {
+    if (_emailController.text.isEmpty) {
+      // Show an error message or handle the empty email case
+      print('Email field is empty');
+      return;
+    }
     // TODO: add validation
     print('Login tapped');
   }
@@ -21,9 +26,9 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Column(
         children: [
-          TextField(controller: _emailController, decoration: InputDecoration(labelText: 'Email')),
-          TextField(controller: _passwordController, decoration: InputDecoration(labelText: 'Password')),
-          ElevatedButton(onPressed: _handleLogin, child: Text('Login')),
+          TextField(controller: _emailController, decoration: InputDecoration(labelText: 'Email')), 
+          TextField(controller: _passwordController, decoration: InputDecoration(labelText: 'Password')), 
+          ElevatedButton(onPressed: _handleLogin, child: Text('Login')), 
         ],
       ),
     );
