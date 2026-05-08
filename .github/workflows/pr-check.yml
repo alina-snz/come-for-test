@@ -2,24 +2,99 @@ name: PR Quality Check
 
 on:
   pull_request:
-    branches: [ main ]  
+    branches: [ main ]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
 
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
-      
+          flutter-version: '3.24.0'
+          cache: true
+
       - name: Install dependencies
         run: flutter pub get
-      
+
+      # ANALYZE ──────────────────────────────────
       - name: Analyze
+        id: analyze_step
+        continue-on-error: true
         run: flutter analyze
-      
+
+      - name: Add lint-failed label
+        if: steps.analyze_step.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['lint-failed']
+            })
+
+      # FORMAT ───────────────────────────────────
       - name: Check formatting
+        id: format_step
+        continue-on-error: true
         run: dart format --output=none --set-exit-if-changed .
+
+      - name: Add format-failed label
+        if: steps.format_step.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['format-failed']
+            })
+
+      # COMMENT IN PR if any check failed ────────
+
+      - name: Comment on PR if checks failed
+        if: steps.analyze_step.outcome == 'failure' || steps.format_step.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const analyzeOk = '${{ steps.analyze_step.outcome }}' === 'success';
+            const formatOk  = '${{ steps.format_step.outcome }}'  === 'success';
+
+            const lines = ['## Automated checks failed\n'];
+
+            if (!analyzeOk) {
+              lines.push(' **flutter analyze** found issues — check the Actions log for details.');
+              lines.push('Fix errors before merging this PR.\n');
+            }
+
+            if (!formatOk) {
+              lines.push('**dart format** found formatting issues.');
+              lines.push('Run `dart format .` locally and commit the result.\n');
+            }
+
+            lines.push('---');
+            lines.push('_This comment was added automatically by PR Quality Check workflow._');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: lines.join('\n')
+            })
+
+      # FAIL WORKFLOW if any check failed ────────
+      - name: Fail if checks failed
+        if: steps.analyze_step.outcome == 'failure' || steps.format_step.outcome == 'failure'
+        run: |
+          echo "One or more checks failed. See labels and comments above."
+          exit 1
