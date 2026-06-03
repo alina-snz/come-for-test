@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,9 +12,15 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  void _handleLogin() {
-    // TODO: add validation
-    print('Login tapped');
+  void _handleLogin() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+    final success = await AuthService.login(email, password);
+    if (success) {
+      print('Login successful');
+    } else {
+      print('Login failed');
+    }
   }
 
   @override
@@ -21,9 +28,9 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Column(
         children: [
-          TextField(controller: _emailController, decoration: InputDecoration(labelText: 'Email')),
-          TextField(controller: _passwordController, decoration: InputDecoration(labelText: 'Password')),
-          ElevatedButton(onPressed: _handleLogin, child: Text('Login')),
+          TextField(controller: _emailController, decoration: InputDecoration(labelText: 'Email')), 
+          TextField(controller: _passwordController, decoration: InputDecoration(labelText: 'Password')), 
+          ElevatedButton(onPressed: _handleLogin, child: Text('Login')), 
         ],
       ),
     );
