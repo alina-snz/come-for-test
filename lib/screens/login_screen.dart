@@ -10,10 +10,18 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isLoading = false;
 
-  void _handleLogin() {
-    // TODO: add validation
+  void _handleLogin() async {
+    setState(() {
+      _isLoading = true;
+    });
+    // Simulate a login process
+    await Future.delayed(Duration(seconds: 2));
     print('Login tapped');
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -24,6 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
           TextField(controller: _emailController, decoration: InputDecoration(labelText: 'Email')),
           TextField(controller: _passwordController, decoration: InputDecoration(labelText: 'Password')),
           ElevatedButton(onPressed: _handleLogin, child: Text('Login')),
+          if (_isLoading) CircularProgressIndicator(),
         ],
       ),
     );
